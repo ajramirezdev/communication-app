@@ -1,0 +1,41 @@
+.user-info {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .user {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+
+        h2 {
+            color: #53fc18;
+        }
+
+        .image {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            display: flex;
+            background-color: #191b1f;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            text-transform: capitalize;
+            font-weight: bolder;
+            color: #53fc18;
+        }
+    }
+
+    .icons {
+        display: flex;
+        gap: 20px;
+
+        svg {
+            font-size: 20px;
+            cursor: pointer;
+        }
+    }
+}

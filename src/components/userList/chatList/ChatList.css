@@ -1,0 +1,94 @@
+.chat-list {
+    flex: 1;
+    overflow-y: scroll;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    .search {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px;
+        gap: 20px;
+
+        .searchBar {
+            flex: 1;
+            background-color: #191b1f;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 10px;
+            border-radius: 5px;
+
+            input {
+                outline: none;
+                border: none;
+                background-color: transparent;
+                flex: 1;
+                font-size: 18;
+                color: white;
+            }
+        }
+
+        .addUser {
+            background-color: #191b1f;
+            height: 100%;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+        }
+    }
+
+    .item {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        gap: 20px;
+        border-bottom: 1px solid #191b1f;
+        cursor: pointer;
+
+        img {
+            width: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            display: flex;
+            background-color: #191b1f;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            text-transform: capitalize;
+            font-weight: bolder;
+            color: #53fc18;
+            border-radius: 50%;
+        }
+
+        .text {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+
+            span {
+                font-weight: 500;
+            }
+
+            p {
+                font-size: 14px;
+                font-weight: 300;
+            }
+        }
+    }
+}
+
+.chat-list::-webkit-scrollbar {
+    display: none;
+}

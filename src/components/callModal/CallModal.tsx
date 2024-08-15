@@ -24,7 +24,11 @@ export const CallModal = ({
                     <div className="image">{caller?.username[0]}</div>
                     <div className="name">{caller?.username}</div>
                     <div className="number">{caller?.number}</div>
-                    <div className="text">Incoming Call...</div>
+                    <div className="text">
+                        {callAccepted && !callEnded
+                            ? "Call Ongoing..."
+                            : "Incoming Call..."}
+                    </div>
                 </div>
                 <div className="buttons">
                     <button onClick={endCall} className="end">

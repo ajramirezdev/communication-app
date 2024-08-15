@@ -16,6 +16,7 @@ import { useUserStore } from "../../lib/userStore";
 import { socket } from "../../lib/socket";
 import { CallModal } from "../callModal/CallModal";
 import Peer, { Instance as PeerInstance } from "simple-peer";
+import { CallerModal } from "../callerModal/CallerModal";
 
 type _Timestamp = {
     seconds: number;
@@ -40,6 +41,7 @@ export default function Chat() {
     const { currentUser } = useUserStore();
 
     const [showModal, setShowModal] = useState(false);
+    const [showCallerModal, setShowCallerModal] = useState(false);
     const [caller, setCaller] = useState<User | null>(null);
     const [stream, setStream] = useState<MediaStream | undefined>();
     const [callAccepted, setCallAccepted] = useState<boolean>(false);
@@ -172,6 +174,8 @@ export default function Chat() {
             return;
         }
 
+        setShowCallerModal(true);
+
         const peer = new Peer({
             initiator: true,
             trickle: false,
@@ -248,6 +252,7 @@ export default function Chat() {
             connectionRef.current.destroy();
             setShowModal(false);
             setCallEnded(true);
+            window.location.reload();
         } else {
             console.error("Connection reference is not set.");
         }
@@ -312,13 +317,20 @@ export default function Chat() {
                     callAccepted={callAccepted}
                 />
             )}
+            {showCallerModal && (
+                <CallerModal
+                    endCall={endCall}
+                    callEnded={callEnded}
+                    callAccepted={callAccepted}
+                />
+            )}
             {stream && (
                 <audio
                     autoPlay
                     muted
                     controls
                     ref={myAudio}
-                    style={{ display: "block" }}
+                    style={{ display: "none" }}
                 />
             )}
             {callAccepted && !callEnded ? (
@@ -326,7 +338,7 @@ export default function Chat() {
                     ref={otherAudio}
                     controls
                     autoPlay
-                    style={{ display: "block" }}
+                    style={{ display: "none" }}
                 />
             ) : null}
         </div>

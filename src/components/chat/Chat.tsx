@@ -1,5 +1,4 @@
 import "./Chat.css";
-
 import { MdMoreHoriz } from "react-icons/md";
 import { IoCallOutline } from "react-icons/io5";
 import { IoMdSend } from "react-icons/io";
@@ -12,8 +11,13 @@ import {
     updateDoc,
 } from "firebase/firestore";
 import { db } from "../../lib/firebase";
-import { useChatStore } from "../../lib/chatStore";
+import { useChatStore, User } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
+import { socket } from "../../lib/socket";
+import { CallModal } from "../callModal/CallModal";
+// import * as process from "process";
+// global.process = process;
+import Peer, { Instance as PeerInstance } from "simple-peer";
 
 type _Timestamp = {
     seconds: number;
@@ -37,7 +41,18 @@ export default function Chat() {
     const { chatID, user } = useChatStore();
     const { currentUser } = useUserStore();
 
+    const [showModal, setShowModal] = useState(false);
+    const [caller, setCaller] = useState<User | null>(null);
+    const [stream, setStream] = useState<MediaStream | undefined>();
+    const [callAccepted, setCallAccepted] = useState<boolean>(false);
+    const [callerSignal, setCallerSignal] = useState<
+        Peer.SignalData | undefined
+    >();
+    const [callEnded, setCallEnded] = useState<boolean>(false);
+
     const endRef = useRef<HTMLDivElement | null>(null);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const connectionRef = useRef<PeerInstance | null>(null);
 
     const sendMessage = async (event: React.FormEvent<HTMLFormElement>) => {
         event?.preventDefault();
@@ -104,6 +119,145 @@ export default function Chat() {
         };
     }, [chatID]);
 
+    useEffect(() => {
+        navigator.mediaDevices
+            .getUserMedia({ audio: true })
+            .then((stream) => {
+                setStream(stream);
+                if (audioRef.current) {
+                    audioRef.current.srcObject = stream;
+                    console.log("navigator");
+                }
+            })
+            .catch((err) => {
+                console.error("Failed to get user media:", err);
+            });
+    }, []);
+
+    useEffect(() => {
+        function onConnect() {
+            console.log(`Connected to server with socket ID: ${socket.id}`);
+        }
+
+        function onDisconnect() {
+            console.log("Disconnected from server");
+        }
+
+        const onIncomingCall = (data: {
+            callerInfo: User;
+            signalData: Peer.SignalData;
+        }) => {
+            console.log("Incoming call from:", data.callerInfo);
+            console.log(data);
+
+            setCaller(data.callerInfo);
+            setCallerSignal(data.signalData);
+            setShowModal(true);
+        };
+
+        socket.on("connect", onConnect);
+        socket.on("disconnect", onDisconnect);
+        socket.on("incoming-call", onIncomingCall);
+        socket.emit("register", currentUser?.number);
+
+        return () => {
+            socket.off("connect", onConnect);
+            socket.off("disconnect", onDisconnect);
+            socket.off("incoming-call", onIncomingCall);
+        };
+    }, []);
+
+    const handleCall = () => {
+        if (!stream) {
+            console.error("Stream is not initialized.");
+            return;
+        }
+
+        const peer = new Peer({
+            initiator: true,
+            trickle: false,
+            stream: stream,
+        });
+
+        peer.on("signal", (data: Peer.SignalData) => {
+            socket.emit("call-user", {
+                calleeId: user?.number,
+                callerInfo: currentUser,
+                signalData: data,
+            });
+        });
+
+        peer.on("error", (err) => {
+            console.error("Peer connection error:", err);
+        });
+
+        // peer.on("stream", (remoteStream) => {
+        //     console.log("Received remote stream:", remoteStream);
+        //     const audioTracks = remoteStream.getAudioTracks();
+        //     console.log("Remote stream audio tracks:", audioTracks);
+
+        //     if (audioTracks.length > 0 && audioRef.current) {
+        //         console.log("Setting remote stream to audio element...");
+        //         audioRef.current.srcObject = remoteStream;
+        //         audioRef.current
+        //             .play()
+        //             .then(() => console.log("Audio playback started"))
+        //             .catch((e) => console.error("Audio playback error:", e));
+        //     } else {
+        //         console.warn("No audio tracks found in the remote stream.");
+        //     }
+        // });
+
+        socket.on("callAccepted", (signal: Peer.SignalData) => {
+            setCallAccepted(true);
+            peer.signal(signal);
+        });
+
+        connectionRef.current = peer;
+    };
+
+    const answerCall = () => {
+        if (!caller) {
+            console.error("Caller is undefined.");
+            return;
+        }
+
+        if (!callerSignal) {
+            console.error("Caller signal is undefined.");
+            return;
+        }
+        setCallAccepted(true);
+
+        const peer = new Peer({
+            initiator: false,
+            trickle: false,
+            stream: stream,
+        });
+
+        peer.on("signal", (data: Peer.SignalData) => {
+            socket.emit("answerCall", { signal: data, to: caller.number });
+        });
+
+        peer.on("stream", (remoteStream) => {
+            if (audioRef.current) {
+                audioRef.current.srcObject = remoteStream;
+                console.log("navigator");
+            }
+        });
+        peer.signal(callerSignal);
+        connectionRef.current = peer;
+    };
+
+    const endCall = () => {
+        if (connectionRef.current) {
+            connectionRef.current.destroy();
+            setShowModal(false);
+            setCallEnded(true);
+        } else {
+            console.error("Connection reference is not set.");
+        }
+    };
+
     return (
         <div className="chat">
             <div className="chat-header">
@@ -115,8 +269,13 @@ export default function Chat() {
                     </div>
                 </div>
                 <div className="icons">
-                    <IoCallOutline />
-                    <MdMoreHoriz />
+                    <button
+                        onClick={handleCall}
+                        style={{ backgroundColor: "transparent" }}
+                    >
+                        <IoCallOutline size={20} color="white" />
+                    </button>
+                    <MdMoreHoriz size={20} />
                 </div>
             </div>
             <div className="messages">
@@ -130,7 +289,6 @@ export default function Chat() {
                             key={`${message.createdAt}`}
                         >
                             <div className="texts">
-                                {/* <span>1 min ago</span> */}
                                 <p>{message.text}</p>
                             </div>
                         </div>
@@ -150,6 +308,16 @@ export default function Chat() {
                     <IoMdSend size={28} />
                 </button>
             </form>
+            {showModal && (
+                <CallModal
+                    caller={caller}
+                    answerCall={answerCall}
+                    endCall={endCall}
+                    callEnded={callEnded}
+                    callAccepted={callAccepted}
+                />
+            )}
+            <audio autoPlay ref={audioRef} style={{ display: "none" }} />
         </div>
     );
 }

@@ -15,8 +15,6 @@ import { useChatStore, User } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import { socket } from "../../lib/socket";
 import { CallModal } from "../callModal/CallModal";
-// import * as process from "process";
-// global.process = process;
 import Peer, { Instance as PeerInstance } from "simple-peer";
 
 type _Timestamp = {
@@ -51,7 +49,8 @@ export default function Chat() {
     const [callEnded, setCallEnded] = useState<boolean>(false);
 
     const endRef = useRef<HTMLDivElement | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const myAudio = useRef<HTMLAudioElement | null>(null);
+    const otherAudio = useRef<HTMLAudioElement | null>(null);
     const connectionRef = useRef<PeerInstance | null>(null);
 
     const sendMessage = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -124,8 +123,8 @@ export default function Chat() {
             .getUserMedia({ audio: true })
             .then((stream) => {
                 setStream(stream);
-                if (audioRef.current) {
-                    audioRef.current.srcObject = stream;
+                if (myAudio.current) {
+                    myAudio.current.srcObject = stream;
                     console.log("navigator");
                 }
             })
@@ -191,22 +190,11 @@ export default function Chat() {
             console.error("Peer connection error:", err);
         });
 
-        // peer.on("stream", (remoteStream) => {
-        //     console.log("Received remote stream:", remoteStream);
-        //     const audioTracks = remoteStream.getAudioTracks();
-        //     console.log("Remote stream audio tracks:", audioTracks);
-
-        //     if (audioTracks.length > 0 && audioRef.current) {
-        //         console.log("Setting remote stream to audio element...");
-        //         audioRef.current.srcObject = remoteStream;
-        //         audioRef.current
-        //             .play()
-        //             .then(() => console.log("Audio playback started"))
-        //             .catch((e) => console.error("Audio playback error:", e));
-        //     } else {
-        //         console.warn("No audio tracks found in the remote stream.");
-        //     }
-        // });
+        peer.on("stream", (remoteStream) => {
+            if (otherAudio.current) {
+                otherAudio.current.srcObject = remoteStream;
+            }
+        });
 
         socket.on("callAccepted", (signal: Peer.SignalData) => {
             setCallAccepted(true);
@@ -239,9 +227,8 @@ export default function Chat() {
         });
 
         peer.on("stream", (remoteStream) => {
-            if (audioRef.current) {
-                audioRef.current.srcObject = remoteStream;
-                console.log("navigator");
+            if (otherAudio.current) {
+                otherAudio.current.srcObject = remoteStream;
             }
         });
         peer.signal(callerSignal);
@@ -317,7 +304,17 @@ export default function Chat() {
                     callAccepted={callAccepted}
                 />
             )}
-            <audio autoPlay ref={audioRef} style={{ display: "none" }} />
+            {stream && (
+                <audio
+                    autoPlay
+                    muted
+                    ref={myAudio}
+                    style={{ display: "none" }}
+                />
+            )}
+            {callAccepted && !callEnded ? (
+                <audio ref={otherAudio} autoPlay style={{ display: "none" }} />
+            ) : null}
         </div>
     );
 }

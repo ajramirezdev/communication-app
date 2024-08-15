@@ -186,18 +186,20 @@ export default function Chat() {
             });
         });
 
-        peer.on("error", (err) => {
-            console.error("Peer connection error:", err);
-        });
-
         peer.on("stream", (remoteStream) => {
             if (otherAudio.current) {
                 otherAudio.current.srcObject = remoteStream;
+                console.log(
+                    "Remote stream received and assigned to otherAudio."
+                );
+            } else {
+                console.error("otherAudio is not ready to receive the stream.");
             }
         });
 
         socket.on("callAccepted", (signal: Peer.SignalData) => {
             setCallAccepted(true);
+            console.log("hi");
             peer.signal(signal);
         });
 
@@ -229,8 +231,14 @@ export default function Chat() {
         peer.on("stream", (remoteStream) => {
             if (otherAudio.current) {
                 otherAudio.current.srcObject = remoteStream;
+                console.log(
+                    "Remote stream received and assigned to otherAudio."
+                );
+            } else {
+                console.error("otherAudio is not ready to receive the stream.");
             }
         });
+
         peer.signal(callerSignal);
         connectionRef.current = peer;
     };
@@ -308,12 +316,18 @@ export default function Chat() {
                 <audio
                     autoPlay
                     muted
+                    controls
                     ref={myAudio}
-                    style={{ display: "none" }}
+                    style={{ display: "block" }}
                 />
             )}
             {callAccepted && !callEnded ? (
-                <audio ref={otherAudio} autoPlay style={{ display: "none" }} />
+                <audio
+                    ref={otherAudio}
+                    controls
+                    autoPlay
+                    style={{ display: "block" }}
+                />
             ) : null}
         </div>
     );

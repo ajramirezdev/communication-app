@@ -67,26 +67,43 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
 
-        .chat-bubble {
-            max-width: 70%;
+        .chat-bubbles {
+            width: 70%;
             display: flex;
+            position: relative;
             gap: 20px;
             align-self: flex-start;
 
-            &.my-chat-bubble {
+            &.my-chat-bubbles {
                 align-self: flex-end;
                 flex-direction: row-reverse;
+
+                .subject {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+
+                    text-align: center;
+                }
 
                 .texts {
                     align-items: flex-end;
 
-                    p {
-                        background-color: #53fc18;
-                        color: black;
-                        font-weight: 500;
+                    .p {
+                        background-color: #191b1f;
                     }
                 }
             }
+
+            .subject {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 10px;
+                font-weight: bolder;
+                text-align: center;
+            }
+
             img {
                 width: 30px;
                 height: 30px;
@@ -105,6 +122,41 @@
                     padding: 20px;
                     border-radius: 10px;
                 }
+
+                .p {
+                    background-color: #191b1f;
+                    padding: 20px;
+                    border-radius: 10px;
+                    width: 100%;
+                }
+            }
+        }
+    }
+
+    .editor {
+        position: relative;
+
+        .subject-input {
+            width: 50%;
+            padding: 10px;
+            border-radius: 10px;
+            outline: none;
+            border: none;
+        }
+
+        .send-email {
+            cursor: pointer;
+            position: absolute;
+            top: 50px;
+            right: 15px;
+            z-index: 50;
+            padding: 5px 25px;
+            border-radius: 5px;
+            background-color: #53fc18;
+            font-weight: bolder;
+
+            &:hover {
+                background-color: #55fc18a6;
             }
         }
     }

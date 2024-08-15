@@ -67,6 +67,12 @@ export const Login = () => {
                 chats: [],
                 id: response.user.uid,
             });
+
+            await setDoc(doc(db, "userEmails", response.user.uid), {
+                chats: [],
+                id: response.user.uid,
+            });
+
             setLoading(false);
 
             toast.success("Account created successfully.");
